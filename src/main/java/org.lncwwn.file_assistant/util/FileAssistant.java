@@ -47,15 +47,70 @@ public class FileAssistant {
     }
 
     /**
-     * writes content from queue into file by the specified path.
+     * writes content from queue into file by the specified dir path.
      * @param queue
-     * @param path
+     * @param dirPath
+     * @param maxLine
      */
-    public void write(Queue<String> queue, String path) {
-        File file = new File(path);
-        if (!file.exists()) {
-
+    public void write(Queue<String> queue, String dirPath, int maxLine) {
+        File dir = new File(dirPath);
+        if (!dir.exists()) {
+            try {
+                dir.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+        if (dir.isFile()) {
+            write(queue, dirPath);
+        } else {
+            String currentPath = dir.getAbsolutePath();
+            File child = new File(currentPath + "/gen.csv");
+        }
+    }
+
+    /**
+     * writes content from queue into file by the specified file path.
+     * @param queue
+     * @param filePath
+     */
+    public void write(Queue<String> queue, String filePath) {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (file.isDirectory()) {
+            write(queue, filePath, 3000);
+        } else {
+            String line = queue.poll();
+            BufferedWriter bufferedWriter = null;
+            try {
+                bufferedWriter = new BufferedWriter(
+                        new OutputStreamWriter(
+                                new FileOutputStream(file)));
+                while (null != line) {
+                    bufferedWriter.write(line);
+                    line = queue.poll();
+                }
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    bufferedWriter.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
     }
 
 }
