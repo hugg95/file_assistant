@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 
 /**
  * An assistant of file operation.
+ *
  * @author victor.li
  * @date 2015-01-29
  */
@@ -18,6 +19,7 @@ public class FileAssistant {
 
     /**
      * reads lines from files and put these lines into queue.
+     *
      * @param queue
      * @param path
      */
@@ -102,6 +104,7 @@ public class FileAssistant {
 
     /**
      * writes content from queue into file by the specified dir path.
+     *
      * @param queue
      * @param dirPath
      * @param limit
@@ -115,7 +118,7 @@ public class FileAssistant {
             write(queue, dirPath);
         } else {
             String currentPath = dir.getAbsolutePath();
-            File child = new File(currentPath + "/gen.csv");
+            File child = new File(currentPath + "/sum.csv");
             BufferedWriter bufferedWriter = null;
             FileWriter writer = null;
             try {
@@ -132,14 +135,12 @@ public class FileAssistant {
             }
             CSVWriter csvWriter = null;
             if (null != bufferedWriter) {
-//                csvWriter = new CSVWriter(bufferedWriter);
                 csvWriter = new CSVWriter(writer);
             }
             try {
                 String line = queue.take();
                 while (null != line) {
                     if (offset < limit) {
-                        System.out.println("------------------" + line);
                         csvWriter.writeNext(line.split(","));
                     } else {
                         offset = 0;
@@ -175,6 +176,7 @@ public class FileAssistant {
 
     /**
      * writes content from queue into file by the specified file path.
+     *
      * @param queue
      * @param filePath
      */
@@ -191,22 +193,13 @@ public class FileAssistant {
         if (file.isDirectory()) {
             write(queue, filePath, 0, 600);
         } else {
-            String line = null;
-            try {
-                line = queue.take();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             CSVWriter csvWriter = null;
             try {
-//                BufferedWriter bufferedWriter = new BufferedWriter(
-//                        new OutputStreamWriter(
-//                                new FileOutputStream(file), "utf-8"));
+                String line = queue.take();
                 FileWriter writer = new FileWriter(file);
-//                csvWriter = new CSVWriter(bufferedWriter);
                 csvWriter = new CSVWriter(writer);
                 while (null != line) {
-                    System.out.println("===================="+line);
+                    System.out.println("=================" + line);
                     csvWriter.writeNext(line.split(","));
                     try {
                         line = queue.take();
@@ -222,6 +215,8 @@ public class FileAssistant {
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             } finally {
                 try {
