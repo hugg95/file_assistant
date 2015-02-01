@@ -33,7 +33,7 @@
                     <finalName>assistant</finalName>
                     <archive>
                         <manifest>
-                            <mainClass>org.lncwwn.assistant.exec.Main</mainClass>
+                            <mainClass>org.lncwwn.assistant.exec.Main2</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

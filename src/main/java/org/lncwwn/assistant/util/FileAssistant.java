@@ -199,7 +199,6 @@ public class FileAssistant {
                 FileWriter writer = new FileWriter(file);
                 csvWriter = new CSVWriter(writer);
                 while (null != line) {
-                    System.out.println("=================" + line);
                     csvWriter.writeNext(line.split(","));
                     try {
                         line = queue.take();
