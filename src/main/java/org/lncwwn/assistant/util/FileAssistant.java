@@ -5,7 +5,6 @@ import au.com.bytecode.opencsv.CSVWriter;
 
 import java.io.*;
 import java.math.BigDecimal;
-import java.util.DoubleSummaryStatistics;
 import java.util.concurrent.BlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,10 +33,11 @@ public class FileAssistant {
                 reader(queue, f.getAbsolutePath());
             }
         } else {
+            BufferedReader bf = null;
             try {
-                BufferedReader bf = new BufferedReader(
+                bf = new BufferedReader(
                         new InputStreamReader(
-                                new FileInputStream(file)));
+                                new FileInputStream(file), "utf-8"));
                 String line = bf.readLine();
                 while (null != line) {
                     queue.put(line);
@@ -49,12 +49,20 @@ public class FileAssistant {
                 e.printStackTrace();
             } catch (InterruptedException e) {
                 e.printStackTrace();
+            } finally {
+                if (null != bf) {
+                    try {
+                        bf.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
 
     }
 
-    public void analyse(BlockingQueue<String> queue1, BlockingQueue<String> queue2) {
+    public void parse(BlockingQueue<String> queue1, BlockingQueue<String> queue2) {
         String line = null;
         try {
             line = queue1.take();
@@ -74,12 +82,10 @@ public class FileAssistant {
                 if (key.equals(nextKey)) {
                     String value = data[14];
                     if (isNumeric(value)) {
-                        //sum += Double.parseDouble(data[14]);
                         sum = sum.add(new BigDecimal(value));
                     }
                 } else {
-                    String result = key + "," + sum + "\n";
-                    System.out.println("-------------------"+result);
+                    String result = key + "," + sum;
                     queue2.put(result);
                     key = nextKey;
                     sum = new BigDecimal(0);
@@ -111,26 +117,29 @@ public class FileAssistant {
             String currentPath = dir.getAbsolutePath();
             File child = new File(currentPath + "/gen.csv");
             BufferedWriter bufferedWriter = null;
-            CSVWriter csvWriter = null;
+            FileWriter writer = null;
             try {
                 bufferedWriter = new BufferedWriter(
                         new OutputStreamWriter(
-                                new FileOutputStream(child)));
+                                new FileOutputStream(child), "utf-8"));
+                writer = new FileWriter(child.getAbsolutePath());
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+            CSVWriter csvWriter = null;
             if (null != bufferedWriter) {
-                csvWriter = new CSVWriter(bufferedWriter);
-                String line = null;
-                try {
-                    line = queue.take();
-                    System.out.println(line);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+//                csvWriter = new CSVWriter(bufferedWriter);
+                csvWriter = new CSVWriter(writer);
+            }
+            try {
+                String line = queue.take();
                 while (null != line) {
                     if (offset < limit) {
-                        //bufferedWriter.write(line);
+                        System.out.println("------------------" + line);
                         csvWriter.writeNext(line.split(","));
                     } else {
                         offset = 0;
@@ -142,11 +151,23 @@ public class FileAssistant {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
+                    csvWriter.flush();
                 }
-                try {
+                if (null != csvWriter) {
+                    csvWriter.flush();
                     csvWriter.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (null != csvWriter) {
+                    try {
+                        csvWriter.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -168,7 +189,7 @@ public class FileAssistant {
         }
 
         if (file.isDirectory()) {
-            write(queue, filePath, 0, 3000);
+            write(queue, filePath, 0, 600);
         } else {
             String line = null;
             try {
@@ -176,32 +197,37 @@ public class FileAssistant {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            BufferedWriter bufferedWriter = null;
             CSVWriter csvWriter = null;
             try {
-                bufferedWriter = new BufferedWriter(
-                        new OutputStreamWriter(
-                                new FileOutputStream(file)));
-                csvWriter = new CSVWriter(bufferedWriter);
+//                BufferedWriter bufferedWriter = new BufferedWriter(
+//                        new OutputStreamWriter(
+//                                new FileOutputStream(file), "utf-8"));
+                FileWriter writer = new FileWriter(file);
+//                csvWriter = new CSVWriter(bufferedWriter);
+                csvWriter = new CSVWriter(writer);
                 while (null != line) {
-                    //bufferedWriter.write(line);
+                    System.out.println("===================="+line);
                     csvWriter.writeNext(line.split(","));
                     try {
                         line = queue.take();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
+                    csvWriter.flush();
                 }
-
-                csvWriter.close();
-
+                if (null != csvWriter) {
+                    csvWriter.flush();
+                    csvWriter.close();
+                }
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
                 try {
-                    bufferedWriter.close();
+                    if (null != csvWriter) {
+                        csvWriter.close();
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

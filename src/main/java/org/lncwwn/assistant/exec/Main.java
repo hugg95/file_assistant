@@ -14,13 +14,14 @@ public class Main {
         final FileAssistant assistant = new FileAssistant();
         final String path = args[0];
 
-        ExecutorService readerThreads = Executors.newFixedThreadPool(2);
-        ExecutorService parseThreads = Executors.newFixedThreadPool(3);
-        ExecutorService writerThreads = Executors.newFixedThreadPool(1);
+        ExecutorService pool = Executors.newCachedThreadPool();
 
         BlockingQueue<String> readQueue = new ArrayBlockingQueue<String>(10000);
         BlockingQueue<String> parseQueue = new ArrayBlockingQueue<String>(10000);
 
+        /**
+         * reader thread
+         */
         class Reader implements Runnable {
             private BlockingQueue<String> queue;
             public Reader(BlockingQueue<String> queue) {
@@ -33,6 +34,9 @@ public class Main {
             }
         }
 
+        /**
+         * parse thread
+         */
         class Parser implements Runnable {
             private BlockingQueue<String> queue1;
             private BlockingQueue<String> queue2;
@@ -42,10 +46,13 @@ public class Main {
             }
             @Override
             public void run() {
-                assistant.analyse(queue1, queue2);
+                assistant.parse(queue1, queue2);
             }
         }
 
+        /**
+         * writer thread
+         */
         class Writer implements Runnable {
             private BlockingQueue<String> queue;
             public Writer(BlockingQueue<String> queue) {
@@ -57,9 +64,9 @@ public class Main {
             }
         }
 
-        readerThreads.execute(new Reader(readQueue));
-        parseThreads.execute(new Parser(readQueue, parseQueue));
-        writerThreads.execute(new Writer(parseQueue));
+        pool.submit(new Reader(readQueue));
+        pool.submit(new Parser(readQueue, parseQueue));
+        pool.submit(new Writer(parseQueue));
 
     }
 
